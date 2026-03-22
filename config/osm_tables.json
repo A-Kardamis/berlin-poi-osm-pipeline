@@ -1,0 +1,413 @@
+{
+  "tables": [
+    {
+      "table_name": "bakeries",
+      "tags": [
+        { "key": "shop", "value": ["bakery", "pastry"] },
+        { "key": "bakery", "value": "yes" }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "brand", "type": "VARCHAR(100)" },
+        { "name": "operator", "type": "VARCHAR(100)" },
+        { "name": "bakery_type", "type": "VARCHAR(50)" },
+        { "name": "amenity", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "banks",
+      "tags": [
+        { "key": "amenity", "value": "bank" }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "brand", "type": "VARCHAR(100)" },
+        { "name": "operator", "type": "VARCHAR(100)" },
+        { "name": "atm", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "bouldering_spots",
+      "tags": [
+        { "key": "climbing:boulder", "value": "yes" }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "fee", "type": "VARCHAR(50)" },
+        { "name": "indoor", "type": "VARCHAR(50)" },
+        { "name": "outdoor", "type": "VARCHAR(50)" },
+        { "name": "climbing:outdoor", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "coworking_centers",
+      "tags": [
+        { "key": "office", "value": "coworking" }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "internet_access", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "dental_offices",
+      "tags": [
+        { "key": "amenity", "value": "dentist" }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "level", "type": "VARCHAR(50)" },
+        { "name": "addr:floor", "type": "VARCHAR(50)" },
+        { "name": "description", "type": "VARCHAR(500)" },
+        { "name": "check_date:opening_hours", "type": "VARCHAR(50)" },
+        { "name": "check_date", "type": "VARCHAR(50)" },
+        { "name": "healthcare:speciality", "type": "VARCHAR(500)" },
+        { "name": "health_facility:type", "type": "VARCHAR(500)" },
+        { "name": "health_specialty:oral_surgery", "type": "VARCHAR(50)" },
+        { "name": "health_specialty:orthodontics", "type": "VARCHAR(50)" },
+        { "name": "health_specialty:periodontology", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "diplomatic_missions",
+      "tags": [
+        { "key": "office", "value": "diplomatic" },
+        { "key": "diplomatic", "value": "yes" }
+      ],
+      "unique_columns": [
+        { "name": "type", "type": "VARCHAR(100)" },
+        { "name": "office", "type": "VARCHAR(50)" },
+        { "name": "diplomatic", "type": "VARCHAR(50)" },
+        { "name": "consulate", "type": "VARCHAR(50)" },
+        { "name": "embassy", "type": "VARCHAR(50)" },
+        { "name": "country", "type": "VARCHAR(100)" }
+      ]
+    },
+    {
+      "table_name": "emergency_stations",
+      "tags": [
+        { "key": "amenity", "value": ["police", "fire_station"] },
+        { "key": "emergency", "value": ["ambulance_station"] }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "operator", "type": "VARCHAR(100)" },
+        { "name": "service_type", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "exhibition_centers",
+      "tags": [
+        { "key": "amenity", "value": "exhibition_centre" }
+      ],
+      "unique_columns": [
+        { "name": "building", "type": "VARCHAR(50)" },
+        { "name": "wikipedia", "type": "VARCHAR(200)" }
+      ]
+    },
+    {
+      "table_name": "galleries",
+      "tags": [
+        { "key": "tourism", "value": "gallery" }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "fee", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "government_offices",
+      "tags": [
+        { "key": "office", "value": "employment_agency" },
+        { "key": "amenity", "value": ["townhall", "public_building"] }
+      ],
+      "unique_columns": [
+        { "name": "type", "type": "VARCHAR(100)" },
+        { "name": "opening_hours", "type": "VARCHAR(200)" }
+      ]
+    },
+    {
+      "table_name": "gyms",
+      "tags": [
+        { "key": "sport", "value": "yoga" },
+        { "key": "leisure", "value": "fitness_centre" }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" }
+      ]
+    },
+    {
+      "table_name": "hospitals",
+      "tags": [
+        { "key": "amenity", "value": ["hospital", "clinic"] },
+        { "key": "healthcare", "value": ["hospital", "clinic"] }
+      ],
+      "unique_columns": [
+        { "name": "operator", "type": "VARCHAR(100)" },
+        { "name": "emergency", "type": "VARCHAR(10)" },
+        { "name": "healthcare_speciality", "type": "VARCHAR(200)" },
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "amenity", "type": "VARCHAR(50)" },
+        { "name": "healthcare", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "hotels",
+      "tags": [
+    {
+      "key": "tourism",
+      "value": ["hotel", "hostel", "guest_house", "aparthotel", "motel"]
+    }
+    ],
+      "unique_columns": [
+        { "name": "tourism", "type": "VARCHAR(50)" },
+        { "name": "stars", "type": "VARCHAR(10)" },
+        { "name": "rooms", "type": "VARCHAR" },
+        { "name": "internet_access", "type": "VARCHAR(20)" }
+      ]
+    },
+    {
+      "table_name": "job_centers",
+      "tags": [
+        { "key": "office", "value": "employment_agency" }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" }
+      ]
+    },
+    {
+      "table_name": "kindergartens",
+      "tags": [
+        { "key": "amenity", "value": "kindergarten" }
+      ],
+        "unique_columns": [
+        { "name": "capacity", "type": "VARCHAR" },
+        { "name": "operator", "type": "VARCHAR" }
+      ]
+    },
+    {
+      "table_name": "libraries",
+      "tags": [
+        { "key": "amenity", "value": "library" }
+      ],
+      "unique_columns": [
+        { "name": "operator:type", "type": "VARCHAR(300)" },
+        { "name": "operator", "type": "VARCHAR(300)" },
+        { "name": "opening_hours", "type": "VARCHAR(500)" },
+        { "name": "toilets:wheelchair", "type": "VARCHAR(200)" },
+        { "name": "internet_access", "type": "VARCHAR(500)" }
+      ]
+    },
+    {
+      "table_name": "malls",
+      "tags": [
+        { "key": "shop", "value": "mall" }
+      ],
+        "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" }
+      ]
+    },
+    {
+      "table_name": "museums",
+      "tags": [
+        {
+          "key": "tourism", "value": "museum"
+        }
+      ],
+      "unique_columns": [
+        { "name": "museum_type", "type": "VARCHAR(100)" },
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "operator", "type": "VARCHAR(100)" },
+        { "name": "subject", "type": "VARCHAR(200)" }
+      ]
+    },
+    {
+      "table_name": "night_clubs",
+      "tags": [
+        { "key": "amenity", "value": "nightclub" }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "toilets:wheelchair", "type": "VARCHAR(50)" },
+        { "name": "wheelchair:description", "type": "VARCHAR(300)" },
+        { "name": "live_music", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "parks",
+      "tags": [
+        { "key": "landuse", "value": "recreation_ground" },
+        { "key": "leisure", "value": ["park", "garden", "nature_reserve"] },
+        { "key": "boundary", "value": "national_park" }
+      ],
+      "unique_columns": [
+        { "name": "area", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "pet_stores",
+      "tags": [
+        { "key": "shop", "value": "pet" }
+      ],
+      "unique_columns": [
+        { "name": "brand", "type": "VARCHAR(100)" },
+        { "name": "opening_hours", "type": "VARCHAR(200)" }
+      ]
+    },
+    {
+      "table_name": "pharmacies",
+      "tags": [
+        { "key": "amenity", "value": "pharmacy" }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "health_facility:type", "type": "VARCHAR(100)" }
+      ]
+    },
+    {
+      "table_name": "playgrounds",
+      "tags": [
+        { "key": "leisure", "value": "playground" }
+      ],
+      "unique_columns": [
+        { "name": "area", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "public_artworks",
+      "tags": [
+        { "key": "tourism", "value": "artwork" }
+      ],
+      "unique_columns": [
+        { "name": "artwork_type", "type": "VARCHAR(100)" },
+        { "name": "artist_name", "type": "VARCHAR(500)" },
+        { "name": "material", "type": "VARCHAR(100)" },
+        { "name": "start_date", "type": "VARCHAR(50)" },
+        { "name": "image", "type": "VARCHAR(500)" },
+        { "name": "wikidata", "type": "VARCHAR(50)" },
+        { "name": "wikimedia_commons", "type": "VARCHAR" }
+      ]
+    },
+    {
+      "table_name": "religious_institutions",
+      "tags": [
+        { "key": "amenity", "value": "place_of_worship" }
+      ],
+      "unique_columns": [
+        { "name": "religion", "type": "VARCHAR(100)" },
+        { "name": "denomination", "type": "VARCHAR(100)" },
+        { "name": "type", "type": "VARCHAR(100)" },
+        { "name": "service_times:en", "type": "VARCHAR(200)" },
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "heritage", "type": "VARCHAR(50)" },
+        { "name": "historic", "type": "VARCHAR(100)" },
+        { "name": "wikidata", "type": "VARCHAR(50)" },
+        { "name": "wikipedia", "type": "VARCHAR(200)" }
+      ]
+    },
+    {
+      "table_name": "social_clubs_activities",
+      "tags": [
+        {
+          "key": "amenity",
+          "value": [
+            "community_centre",
+            "arts_centre",
+            "social_centre",
+            "youth_centre",
+            "social_club",
+            "music_school",
+            "events_venue",
+            "music_venue",
+            "dojo",
+            "dancing_school",
+            "studio",
+            "theatre"
+          ]
+        },
+        {
+          "key": "leisure",
+          "value": [
+            "sports_centre",
+            "fitness_centre",
+            "dance",
+            "hackerspace",
+            "music_venue",
+            "garden"
+          ]
+        }
+      ],
+      "unique_columns": [
+        { "name": "club", "type": "VARCHAR(100)" },
+        { "name": "leisure", "type": "VARCHAR(50)" },
+        { "name": "sport", "type": "VARCHAR(100)" },
+        { "name": "amenity", "type": "VARCHAR(50)" },
+        { "name": "opening_hours", "type": "VARCHAR(500)" }
+      ]
+    },
+    {
+      "table_name": "supermarkets",
+      "tags": [
+        { "key": "shop", "value": "supermarket" }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "brand", "type": "VARCHAR(100)" },
+        { "name": "type", "type": "VARCHAR(100)" },
+        { "name": "payment_credit_card", "type": "VARCHAR(50)" },
+        { "name": "payment_debit_cards", "type": "VARCHAR(50)" },
+        { "name": "payment_cash", "type": "VARCHAR(50)" },
+        { "name": "payment_contactless", "type": "VARCHAR(50)" },
+        { "name": "internet_access", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "theaters",
+      "tags": [
+        { "key": "amenity", "value": ["theatre", "cinema"] }
+      ],
+      "unique_columns": [
+        { "name": "type", "type": "VARCHAR(100)" },
+        { "name": "operator", "type": "VARCHAR(100)" },
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "screen", "type": "VARCHAR(50)" },
+        { "name": "amenity", "type": "VARCHAR(50)" },
+        { "name": "cinema:type", "type": "VARCHAR(100)" }
+      ]
+    },
+    {
+      "table_name": "tourist_attractions",
+      "tags": [
+        { "key": "tourism", "value": ["attraction", "viewpoint"] },
+        { "key": "historic", "value": ["monument", "memorial", "landmark"] }
+      ],
+      "unique_columns": [
+        { "name": "tourism", "type": "VARCHAR(100)" },
+        { "name": "historic", "type": "VARCHAR(100)" }
+      ]
+    },
+    {
+      "table_name": "venues",
+      "tags": [
+        { "key": "amenity", "value": ["restaurant", "cafe", "bar"] }
+      ],
+      "unique_columns": [
+        { "name": "amenity", "type": "VARCHAR(50)" },
+        { "name": "cuisine", "type": "VARCHAR(500)" },
+        { "name": "opening_hours", "type": "VARCHAR(500)" },
+        { "name": "takeaway", "type": "VARCHAR(50)" }
+      ]
+    },
+    {
+      "table_name": "veterinary_clinics",
+      "tags": [
+        { "key": "amenity", "value": "veterinary" }
+      ],
+      "unique_columns": [
+        { "name": "opening_hours", "type": "VARCHAR(200)" },
+        { "name": "operator", "type": "VARCHAR(100)" },
+        { "name": "emergency", "type": "VARCHAR(50)" }
+      ]
+    }
+  ]
+}

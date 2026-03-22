@@ -1,0 +1,5 @@
+pandas
+geopandas
+osmnx
+psycopg2-binary
+shapely

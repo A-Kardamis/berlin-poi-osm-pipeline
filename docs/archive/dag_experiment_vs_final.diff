@@ -1,0 +1,481 @@
+--- /mnt/data/core_osm_table_generator_dag.py	2026-03-19 18:07:47.971906526 +0000
++++ /mnt/data/core_osm_table_generator_dag_experiment.py	2026-03-19 18:07:47.972715408 +0000
+@@ -3,6 +3,7 @@
+ import re
+ import logging
+ import time
++import uuid
+ from datetime import datetime, timezone, timedelta
+ 
+ import pandas as pd
+@@ -723,6 +724,61 @@
+             "error": str(e),
+         }
+ 
++def ensure_experiment_tables(cur):
++    """Tables for execution strategy experiment summaries."""
++    cur.execute(
++        f"""
++        CREATE TABLE IF NOT EXISTS {TARGET_SCHEMA}.osm_experiment_results (
++            run_id TEXT PRIMARY KEY,
++            run_ts TIMESTAMPTZ NOT NULL,
++            dag_id TEXT NOT NULL,
++            strategy TEXT NOT NULL,
++            run_label TEXT NULL,
++            concurrency_limit INTEGER NULL,
++            batch_size INTEGER NULL,
++            tables_total INTEGER NOT NULL,
++            tables_succeeded INTEGER NOT NULL,
++            tables_failed INTEGER NOT NULL,
++            tables_retried INTEGER NOT NULL,
++            dag_duration_sec DOUBLE PRECISION NOT NULL,
++            avg_table_duration_sec DOUBLE PRECISION NOT NULL,
++            p95_table_duration_sec DOUBLE PRECISION NULL,
++            max_table_duration_sec DOUBLE PRECISION NOT NULL,
++            max_db_connections_observed INTEGER NULL,
++            notes TEXT NULL,
++            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
++        );
++        """
++    )
++
++    cur.execute(
++        f"""
++        CREATE TABLE IF NOT EXISTS {TARGET_SCHEMA}.osm_experiment_results_table (
++            run_id TEXT NOT NULL,
++            table_name TEXT NOT NULL,
++            status TEXT NOT NULL,
++            duration_sec DOUBLE PRECISION NOT NULL,
++            attempts INTEGER NOT NULL,
++            db_connections_observed INTEGER NULL,
++            records_fetched INTEGER NULL,
++            records_inserted INTEGER NULL,
++            error TEXT NULL,
++            PRIMARY KEY (run_id, table_name),
++            FOREIGN KEY (run_id) REFERENCES {TARGET_SCHEMA}.osm_experiment_results(run_id)
++        );
++        """
++    )
++
++    cur.execute(
++        f"ALTER TABLE {TARGET_SCHEMA}.osm_experiment_results ADD COLUMN IF NOT EXISTS run_label TEXT NULL;"
++    )
++    cur.execute(
++        f"ALTER TABLE {TARGET_SCHEMA}.osm_experiment_results ADD COLUMN IF NOT EXISTS max_db_connections_observed INTEGER NULL;"
++    )
++    cur.execute(
++        f"ALTER TABLE {TARGET_SCHEMA}.osm_experiment_results_table ADD COLUMN IF NOT EXISTS db_connections_observed INTEGER NULL;"
++    )
++
+ # ======================
+ # MAIN
+ # ======================
+@@ -735,7 +791,7 @@
+ 
+ 
+ # ======================
+-# RUNTIME STRATEGY CONTROLS (tunable without code edits)
++# EXECUTION STRATEGY EXPERIMENT CONTROLS (tunable without code edits)
+ # ======================
+ # Set these via Docker env (recommended) or default values apply.
+ #
+@@ -759,9 +815,9 @@
+     return parsed
+ 
+ 
+-def load_runtime_settings() -> dict:
++def load_experiment_settings() -> dict:
+     """
+-    Load and validate runtime strategy settings from environment.
++    Load and validate execution strategy experiment settings from environment.
+ 
+     Important: because Docker .env values are injected when containers start, any change to
+     these settings still requires recreating/restarting the relevant Airflow containers.
+@@ -779,6 +835,7 @@
+         "retry_delay_minutes": _env_int("OSM_RETRY_DELAY_MINUTES", "2"),
+         "batch_size": _env_int("OSM_BATCH_SIZE", "5"),
+         "max_active_batches": _env_int("OSM_MAX_ACTIVE_BATCHES", "4"),
++        "run_label": os.getenv("OSM_RUN_LABEL", "experiment").strip() or "experiment",
+     }
+ 
+     if settings["max_active_tis_per_dagrun"] <= 0:
+@@ -795,27 +852,37 @@
+     return settings
+ 
+ 
++def current_db_connections(cur) -> int | None:
++    """Best-effort snapshot of currently visible Postgres sessions."""
++    try:
++        cur.execute("SELECT count(*) FROM pg_stat_activity;")
++        row = cur.fetchone()
++        return int(row[0]) if row and row[0] is not None else None
++    except Exception:
++        logger.exception("Could not read pg_stat_activity connection count")
++        return None
+ 
+ 
+-RUNTIME_SETTINGS = load_runtime_settings()
++EXPERIMENT_SETTINGS = load_experiment_settings()
+ 
+-OSM_MAX_ACTIVE_TIS_PER_DAGRUN = RUNTIME_SETTINGS["max_active_tis_per_dagrun"]
+-OSM_TASK_RETRIES = RUNTIME_SETTINGS["task_retries"]
+-OSM_RETRY_DELAY_MINUTES = RUNTIME_SETTINGS["retry_delay_minutes"]
+-OSM_STRATEGY = RUNTIME_SETTINGS["strategy"]
+-OSM_BATCH_SIZE = RUNTIME_SETTINGS["batch_size"]
+-OSM_MAX_ACTIVE_BATCHES = RUNTIME_SETTINGS["max_active_batches"]
++OSM_MAX_ACTIVE_TIS_PER_DAGRUN = EXPERIMENT_SETTINGS["max_active_tis_per_dagrun"]
++OSM_TASK_RETRIES = EXPERIMENT_SETTINGS["task_retries"]
++OSM_RETRY_DELAY_MINUTES = EXPERIMENT_SETTINGS["retry_delay_minutes"]
++OSM_STRATEGY = EXPERIMENT_SETTINGS["strategy"]
++OSM_BATCH_SIZE = EXPERIMENT_SETTINGS["batch_size"]
++OSM_MAX_ACTIVE_BATCHES = EXPERIMENT_SETTINGS["max_active_batches"]
++OSM_RUN_LABEL = EXPERIMENT_SETTINGS["run_label"]
+ 
+ AIRFLOW_CONN_ID = "osm_postgres"  # matches AIRFLOW_CONN_OSM_POSTGRES in airflow/.env
+ 
+ @dag(
+-    dag_id="core_osm_table_generator",
++    dag_id="core_osm_table_generator_experiment",
+     start_date=days_ago(1),
+     schedule=None,  # manual trigger for MVP
+     catchup=False,
+-    tags=["osm", "berlin", "airflow"],
++    tags=["osm", "berlin", "experiment"],
+ )
+-def core_osm_table_generator():
++def core_osm_table_generator_experiment():
+     @task
+     def setup_db() -> str:
+         """
+@@ -823,6 +890,7 @@
+         - ensure schema exists
+         - ensure PostGIS extension exists
+         - ensure metadata table exists
++        - ensure experiment summary tables exist
+         """
+         hook = PostgresHook(postgres_conn_id=AIRFLOW_CONN_ID)
+         conn = hook.get_conn()
+@@ -831,6 +899,7 @@
+         cur.execute(f"CREATE SCHEMA IF NOT EXISTS {TARGET_SCHEMA};")
+         ensure_postgis(cur)
+         ensure_metadata_table(cur)
++        ensure_experiment_tables(cur)
+         conn.commit()
+ 
+         cur.close()
+@@ -838,9 +907,14 @@
+         return "ok"
+ 
+     @task
+-    def get_runtime_settings() -> dict:
+-        """Expose validated runtime strategy settings to downstream tasks."""
+-        return RUNTIME_SETTINGS.copy()
++    def init_experiment_run_id() -> str:
++        """Create a stable run_id shared across all tasks for this DAG run."""
++        return str(uuid.uuid4())
++
++    @task
++    def get_experiment_settings() -> dict:
++        """Expose validated environment-driven experiment settings to downstream tasks."""
++        return EXPERIMENT_SETTINGS.copy()
+ 
+     @task.branch
+     def choose_strategy(settings: dict) -> str:
+@@ -856,11 +930,11 @@
+         max_active_tis_per_dagrun=OSM_MAX_ACTIVE_TIS_PER_DAGRUN,
+         map_index_template="{{ table_label }}",
+     )
+-    def process_table(settings: dict, table_cfg: dict) -> dict:
++    def process_table(experiment_run_id: str, settings: dict, table_cfg: dict) -> dict:
+         """
+         One mapped task per table config from osm_tables.json.
+ 
+-        Runtime additions:
++        Experiment additions:
+         - per-table timing + attempts
+         - bounded concurrency for mapped tasks
+         - retries with exponential backoff
+@@ -879,6 +953,7 @@
+         conn = hook.get_conn()
+         cur = conn.cursor()
+ 
++        db_connections_observed = current_db_connections(cur)
+         result = process_one_table(conn, cur, run_dt, table_cfg)
+ 
+         cur.close()
+@@ -888,11 +963,14 @@
+ 
+         result.update(
+             {
++                "run_id": experiment_run_id,
+                 "run_ts": str(run_dt),
+                 "table_name": table_name,
+                 "map_index": map_index,
+                 "attempts": attempts,
+                 "duration_sec": float(duration_sec),
++                "db_connections_observed": db_connections_observed,
++                "run_label": settings.get("run_label"),
+             }
+         )
+ 
+@@ -928,7 +1006,7 @@
+         max_active_tis_per_dagrun=OSM_MAX_ACTIVE_BATCHES,
+         map_index_template="{{ batch_label }}",
+     )
+-    def process_batch(settings: dict, batch: list[dict]) -> list[dict]:
++    def process_batch(experiment_run_id: str, settings: dict, batch: list[dict]) -> list[dict]:
+         """
+         Process a batch sequentially (Option A):
+         - this task is mapped over batches
+@@ -957,6 +1035,7 @@
+             hook = PostgresHook(postgres_conn_id=AIRFLOW_CONN_ID)
+             conn = hook.get_conn()
+             cur = conn.cursor()
++            db_connections_observed = current_db_connections(cur)
+             try:
+                 r = process_one_table(conn, cur, run_dt, table_cfg)
+             finally:
+@@ -973,12 +1052,15 @@
+ 
+             r.update(
+                 {
++                    "run_id": experiment_run_id,
+                     "run_ts": str(run_dt),
+                     "table_name": table_name,
+                     "batch_index": batch_index,
+                     "table_index_in_batch": i,
+                     "attempts": batch_attempts,  # batch retries apply to all tables in this batch run
+                     "duration_sec": float(duration_sec),
++                    "db_connections_observed": db_connections_observed,
++                    "run_label": settings.get("run_label"),
+                 }
+             )
+             results.append(r)
+@@ -995,8 +1077,189 @@
+ 
+         return results
+ 
++    @task
++    def flatten_results(maybe_nested: list) -> list[dict]:
++        """
++        Flatten results from batch strategy:
++        - pure_parallel returns list[dict]
++        - batch returns list[list[dict]]
++        """
++        if not maybe_nested:
++            return []
++        # If first element is a list, we assume list[list[dict]]
++        if isinstance(maybe_nested[0], list):
++            flat: list[dict] = []
++            for chunk in maybe_nested:
++                flat.extend(chunk)
++            return flat
++        # Otherwise list[dict]
++        return maybe_nested  # type: ignore[return-value]
++
++    @task
++    def summarize_run(
++        experiment_run_id: str,
++        settings: dict,
++        results: list[dict],
++    ) -> dict:
++        """
++        Aggregate per-table results and persist a single summary row (+ per-table rows)
++        into {TARGET_SCHEMA}.osm_experiment_results*.
++        """
++        ctx = get_current_context()
++        dag_id = ctx["dag"].dag_id
++        run_ts = ctx["logical_date"]
++
++        dag_run = ctx.get("dag_run")
++        if dag_run and dag_run.start_date:
++            dag_duration_sec = (datetime.now(timezone.utc) - dag_run.start_date).total_seconds()
++        else:
++            dag_duration_sec = 0.0
++
++        df = pd.DataFrame(results)
++
++        tables_total = int(len(df))
++        tables_failed = int((df["status"] == "failed").sum()) if "status" in df.columns else 0
++        tables_succeeded = tables_total - tables_failed
++        tables_retried = int((df["attempts"] > 1).sum()) if "attempts" in df.columns else 0
++
++        durations = (
++            df["duration_sec"].astype(float)
++            if "duration_sec" in df.columns and tables_total
++            else pd.Series([], dtype=float)
++        )
++        avg_table = float(durations.mean()) if len(durations) else 0.0
++        max_table = float(durations.max()) if len(durations) else 0.0
++        p95_table = float(durations.quantile(0.95)) if len(durations) else None
++
++        db_conn_series = df["db_connections_observed"].dropna() if "db_connections_observed" in df.columns else pd.Series([], dtype=float)
++        max_db_connections_observed = int(db_conn_series.max()) if len(db_conn_series) else None
++
++        strategy = settings["strategy"]
++        run_label = settings.get("run_label")
++        concurrency_limit = (
++            int(settings["max_active_batches"])
++            if strategy == "batch"
++            else int(settings["max_active_tis_per_dagrun"])
++        )
++        batch_size = int(settings["batch_size"]) if strategy == "batch" else None
++        notes = (
++            "Connection counts are sampled best-effort from pg_stat_activity at task start; "
++            "container CPU/memory are not instrumented by this DAG."
++        )
++
++        hook = PostgresHook(postgres_conn_id=AIRFLOW_CONN_ID)
++        conn = hook.get_conn()
++        cur = conn.cursor()
++
++        cur.execute(
++            f"""
++            INSERT INTO {TARGET_SCHEMA}.osm_experiment_results (
++                run_id, run_ts, dag_id, strategy, run_label, concurrency_limit, batch_size,
++                tables_total, tables_succeeded, tables_failed, tables_retried,
++                dag_duration_sec, avg_table_duration_sec, p95_table_duration_sec, max_table_duration_sec,
++                max_db_connections_observed, notes
++            )
++            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
++            ON CONFLICT (run_id) DO UPDATE SET
++                run_ts = EXCLUDED.run_ts,
++                dag_id = EXCLUDED.dag_id,
++                strategy = EXCLUDED.strategy,
++                run_label = EXCLUDED.run_label,
++                concurrency_limit = EXCLUDED.concurrency_limit,
++                batch_size = EXCLUDED.batch_size,
++                tables_total = EXCLUDED.tables_total,
++                tables_succeeded = EXCLUDED.tables_succeeded,
++                tables_failed = EXCLUDED.tables_failed,
++                tables_retried = EXCLUDED.tables_retried,
++                dag_duration_sec = EXCLUDED.dag_duration_sec,
++                avg_table_duration_sec = EXCLUDED.avg_table_duration_sec,
++                p95_table_duration_sec = EXCLUDED.p95_table_duration_sec,
++                max_table_duration_sec = EXCLUDED.max_table_duration_sec,
++                max_db_connections_observed = EXCLUDED.max_db_connections_observed,
++                notes = EXCLUDED.notes;
++            """,
++            (
++                experiment_run_id,
++                run_ts,
++                dag_id,
++                strategy,
++                run_label,
++                concurrency_limit,
++                batch_size,
++                tables_total,
++                tables_succeeded,
++                tables_failed,
++                tables_retried,
++                float(dag_duration_sec),
++                avg_table,
++                p95_table,
++                max_table,
++                max_db_connections_observed,
++                notes,
++            ),
++        )
++
++        rows = []
++        for r in results:
++            rows.append(
++                (
++                    experiment_run_id,
++                    r.get("table_name"),
++                    r.get("status"),
++                    float(r.get("duration_sec", 0.0)),
++                    int(r.get("attempts", 1)),
++                    r.get("db_connections_observed"),
++                    r.get("records_fetched"),
++                    r.get("records_inserted"),
++                    r.get("error"),
++                )
++            )
++
++        execute_values(
++            cur,
++            f"""
++            INSERT INTO {TARGET_SCHEMA}.osm_experiment_results_table
++                (run_id, table_name, status, duration_sec, attempts, db_connections_observed,
++                 records_fetched, records_inserted, error)
++            VALUES %s
++            ON CONFLICT (run_id, table_name) DO UPDATE SET
++                status = EXCLUDED.status,
++                duration_sec = EXCLUDED.duration_sec,
++                attempts = EXCLUDED.attempts,
++                db_connections_observed = EXCLUDED.db_connections_observed,
++                records_fetched = EXCLUDED.records_fetched,
++                records_inserted = EXCLUDED.records_inserted,
++                error = EXCLUDED.error;
++            """,
++            rows,
++        )
++
++        conn.commit()
++        cur.close()
++        conn.close()
++
++        summary = {
++            "run_id": experiment_run_id,
++            "strategy": strategy,
++            "concurrency_limit": concurrency_limit,
++            "batch_size": batch_size,
++            "run_label": run_label,
++            "max_db_connections_observed": max_db_connections_observed,
++            "tables_total": tables_total,
++            "tables_succeeded": tables_succeeded,
++            "tables_failed": tables_failed,
++            "tables_retried": tables_retried,
++            "dag_duration_sec": float(dag_duration_sec),
++            "avg_table_duration_sec": avg_table,
++            "p95_table_duration_sec": p95_table,
++            "max_table_duration_sec": max_table,
++        }
++        logger.info("RUN SUMMARY: %s", summary)
++        return summary
++
+     setup = setup_db()
+-    settings = get_runtime_settings()
++    experiment_run_id = init_experiment_run_id()
++    settings = get_experiment_settings()
+     strategy_choice = choose_strategy(settings)
+ 
+     start_pure = EmptyOperator(task_id="start_pure_parallel")
+@@ -1007,17 +1270,33 @@
+     strategy_choice >> start_batch
+ 
+     mapped = process_table.partial(
++        experiment_run_id=experiment_run_id,
+         settings=settings,
+     ).expand(table_cfg=osm_config["tables"])
+     start_pure >> mapped
+ 
++    summarize_run.override(task_id="summarize_pure_parallel_run")(
++        experiment_run_id=experiment_run_id,
++        settings=settings,
++        results=mapped,
++    )
++
+     batches = create_batches(settings=settings, tables=osm_config["tables"])
+     start_batch >> batches
+ 
+     batch_mapped = process_batch.partial(
++        experiment_run_id=experiment_run_id,
+         settings=settings,
+     ).expand(batch=batches)
+     batches >> batch_mapped
+ 
++    flat = flatten_results(batch_mapped)
++
++    summarize_run.override(task_id="summarize_batch_run")(
++        experiment_run_id=experiment_run_id,
++        settings=settings,
++        results=flat,
++    )
++
+ # This variable is what Airflow discovers.
+-dag = core_osm_table_generator()
+\ No newline at end of file
++dag = core_osm_table_generator_experiment()
+\ No newline at end of file

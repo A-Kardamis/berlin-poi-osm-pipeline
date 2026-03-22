@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+
+.env
+.env.*
+
+!.env.example
+!airflow/.env.example
+
+logs/
+airflow/logs/
+
+notebooks/cache/
+
+.DS_Store

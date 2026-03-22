@@ -1,0 +1,25 @@
+{
+  "must_columns": [
+    { "name": "id", "type": "VARCHAR(50)" },
+    { "name": "geometry", "type": "geometry(Point, 4326)" },
+    { "name": "name", "type": "VARCHAR(300)" },
+    { "name": "latitude", "type": "DECIMAL(9,6)" },
+    { "name": "longitude", "type": "DECIMAL(9,6)" },
+    { "name": "district", "type": "VARCHAR(50)" },
+    { "name": "district_id", "type": "VARCHAR(20)" },
+    { "name": "neighborhood", "type": "VARCHAR(50)" },
+    { "name": "neighborhood_id", "type": "VARCHAR(20)" }
+    
+  ],
+  "common_columns": [
+  
+    { "name": "addr_housenumber", "type": "VARCHAR(200)" },
+    { "name": "addr_street", "type": "VARCHAR(300)" },
+    { "name": "addr_postcode", "type": "VARCHAR(20)" },
+    { "name": "website", "type": "VARCHAR(300)" },
+    { "name": "phone_number", "type": "VARCHAR(300)" },
+    { "name": "email", "type": "VARCHAR(300)" },
+    { "name": "wheelchair", "type": "BOOLEAN" }, 
+    { "name": "last_updated", "type": "TIMESTAMP" }
+  ]
+}
