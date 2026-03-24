@@ -1,140 +1,69 @@
 # Berlin POI OSM Pipeline
 
-A config-driven geospatial data ingestion pipeline that extracts, standardizes, and refreshes Berlin Point-of-Interest (POI) layers from OpenStreetMap using **Apache Airflow**, **Docker**, and **PostgreSQL/PostGIS**.
+A **config-driven geospatial data pipeline** that ingests, standardizes, and refreshes Berlin Point-of-Interest (POI) data from OpenStreetMap using **Apache Airflow**, **Docker**, and **PostgreSQL/PostGIS**.
 
-This project was developed during a **Data Engineering internship** as part of a larger Berlin location-intelligence system. The broader goal was to support an AI-driven recommendation workflow that helps people identify suitable places to live, visit, or explore in Berlin based on lifestyle and preference signals.
+This system dynamically generates and processes multiple POI layers through a single DAG, enabling scalable ingestion without hardcoded table logic.
+
+Developed during a **Data Engineering internship**, the project contributes to a broader location-intelligence system aimed at supporting AI-driven recommendations for urban living and exploration.
 
 ---
 
 ## Project Purpose
 
-The project solves a practical data engineering problem:
+This project addresses a real-world data engineering challenge:
 
-- multiple POI categories need to be ingested from OpenStreetMap
-- each category has different tags and layer-specific attributes
-- the schema must stay consistent across all generated tables
-- new tables should be added **without modifying DAG code**
-- the pipeline should support scheduled refreshes of live urban data
+* ingest multiple POI categories from OpenStreetMap
+* handle heterogeneous tag structures across layers
+* enforce a consistent schema across all tables
+* allow onboarding of new layers **without code changes**
+* support repeatable refresh of continuously evolving geospatial data
 
-The final result is a **single dynamic Airflow DAG** that processes many POI layers through configuration rather than hardcoded table-by-table logic.
-
----
-
-## What This Repository Contains
-
-This repository documents the full workflow from early layer exploration to final pipeline automation.
-
-It includes:
-
-- a **reference layer exploration notebook** for hotels
-- a **shared data model strategy** using JSON configuration files
-- a **dynamic Airflow DAG** that generates and refreshes many POI tables
-- a **Docker-based local orchestration environment**
-- an **execution strategy experiment** comparing pure parallel vs batched execution
-- final design decisions and archived experiment artifacts
+The result is a **single dynamic Airflow pipeline** driven entirely by configuration.
 
 ---
 
 ## Key Features
 
-- **Single dynamic DAG**
-  - one Airflow DAG processes all configured POI layers
+* **Dynamic Airflow DAG**
 
-- **Config-driven architecture**
-  - shared schema in `core_columns.json`
-  - layer-specific definitions in `osm_tables.json`
+  * one DAG processes all POI layers
 
-- **Scalable onboarding of new tables**
-  - new layers are added through configuration, not code changes
+* **Config-driven architecture**
 
-- **Geospatial processing**
-  - OSM extraction using tag filters
-  - standardized geometry handling for downstream database use
+  * shared schema via `core_columns.json`
+  * layer definitions via `osm_tables.json`
 
-- **Full refresh ingestion**
-  - tables are rebuilt on each run rather than incrementally merged
+* **Scalable table onboarding**
 
-- **Execution strategy support**
-  - pure parallel mode
-  - batched mode
-  - final recommendation documented through experiment results
+  * new layers added without modifying DAG code
 
-- **Docker + Airflow local environment**
-  - reproducible orchestration and testing workflow
+* **Geospatial processing**
 
----
+  * OSM extraction using tag filters
+  * standardized geometry handling
 
-## Why OpenStreetMap
+* **Full refresh strategy**
 
-OpenStreetMap (OSM) was selected as the primary source because it offers:
+  * tables rebuilt on each run (no incremental complexity)
 
-- open and reusable geospatial data
-- broad POI coverage
-- rich tag-based structure across many domains
-- frequent community-driven updates
-- suitability for modeling real-world urban conditions
+* **Execution strategies**
 
-For this project, OSM provided the best balance of:
+  * pure parallel
+  * batched execution (experiment-backed decision)
 
-- openness
-- flexibility
-- coverage
-- extensibility
+* **Dockerized environment**
 
----
-
-## Project Phases
-
-### 1. Exploration
-
-The work began with layer-by-layer exploration to understand what was possible with OSM data.
-
-This phase focused on:
-- data source evaluation
-- tag analysis
-- data completeness assessment
-- enrichment feasibility
-- early transformation logic
-
-The hotels layer was used as the main reference case.
-
----
-
-### 2. Standardization
-
-The next step was designing a reusable schema strategy.
-
-This led to the split between:
-
-- **shared columns** used across all layers
-- **layer-specific columns** defined per POI type
-
-This design made it possible to balance:
-- consistency
-- flexibility
-- scalability
-
----
-
-### 3. Automation
-
-The final phase was building a single Airflow DAG that could:
-
-- read configuration
-- create and refresh tables
-- fetch OSM features
-- apply shared processing
-- load results into PostgreSQL/PostGIS
-
-This transformed a manual workflow into a scalable ingestion system.
+  * reproducible local orchestration with Airflow
 
 ---
 
 ## Repository Structure
+
 ```text
-    berlin-poi-osm-pipeline/
+berlin-poi-osm-pipeline/
 ├── README.md
 ├── .gitignore
+├── LICENSE
 │
 ├── airflow/
 │   ├── dags/
@@ -174,162 +103,130 @@ This transformed a manual workflow into a scalable ingestion system.
 │
 └── notebooks/
     └── osm_layer_exploration_hotels.ipynb
-``` 
-   
+```
 
 ---
 
 ## Core Technical Idea
 
-The central engineering idea of this project is:
+> **Separate pipeline logic from layer configuration**
 
-> **separate pipeline logic from layer configuration**
-
-The DAG code remains stable, while table behavior is controlled externally through JSON files.
+The DAG remains stable, while behavior is defined externally through JSON.
 
 ### `core_columns.json`
 
-Defines the shared schema structure used across all generated POI tables.
+Defines the shared schema across all POI tables.
 
 ### `osm_tables.json`
 
-Defines, for each layer:
-- table name
-- OSM tags used for extraction
-- unique layer-specific columns
+Defines, per layer:
 
-This means a new POI layer can be onboarded by updating configuration instead of rewriting DAG logic.
+* table name
+* OSM extraction tags
+* layer-specific attributes
+
+This allows new layers to be added without modifying pipeline logic.
 
 ---
 
-## How the Pipeline Works
+## Pipeline Overview
 
-At a high level:
-
-1. Airflow starts the DAG
-2. shared and layer-specific JSON configs are loaded
-3. the pipeline iterates over configured tables
-4. OSM data is fetched for each layer using its tag definition
-5. shared/core logic is applied
-6. layer-specific fields are appended with minimal transformation
-7. the target table is refreshed in PostgreSQL/PostGIS
-8. ingestion metadata is logged
-
-The same architecture supports many tables through one orchestration flow.
+1. Airflow triggers the DAG
+2. configuration files are loaded
+3. pipeline iterates through configured layers
+4. OSM data is fetched per layer
+5. shared transformations are applied
+6. layer-specific attributes are appended
+7. tables are fully refreshed in PostgreSQL/PostGIS
+8. ingestion metadata is recorded
 
 ---
 
 ## Execution Strategy
 
-Two execution strategies were evaluated:
+Two strategies were evaluated:
 
-- **Pure Parallel**
-- **Batch**
+* **Pure Parallel**
+* **Batch Execution**
 
-The experiment showed that pure parallel could be faster, but batch execution provided more controlled resource usage and safer operational behavior.
+While pure parallel offered maximum speed, batch execution provided better stability and resource control in a constrained local environment.
 
-The strategy decision and supporting results are documented in:
+Details and results:
 
-`docs/06_execution_strategy_experiment.md`
+```
+docs/06_execution_strategy_experiment.md
+```
 
 ---
 
 ## Documentation Guide
 
-The `docs/` folder contains the full project story:
+The `docs/` folder contains full project documentation:
 
-- `01_project_overview.md`  
-  overall context and project purpose
+* project context and objectives
+* layer exploration and analysis
+* schema and configuration strategy
+* pipeline architecture
+* Airflow + Docker setup
+* execution experiments
+* final engineering decisions
 
-- `02_initial_layer_analysis.md`  
-  hotels reference-layer exploration
+Archived materials:
 
-- `03_data_model_and_column_strategy.md`  
-  schema strategy and JSON-based design
-
-- `04_pipeline_architecture.md`  
-  DAG behavior and table processing flow
-
-- `05_airflow_and_docker_setup.md`  
-  local orchestration environment
-
-- `06_execution_strategy_experiment.md`  
-  execution strategy comparison and results
-
-- `07_final_design_decisions.md`  
-  final engineering trade-offs and rationale
-
-Archived technical comparison artifacts are stored under:
-
-`docs/archive/`
-
----
-
-## Example Visuals
-
-The repository includes Airflow screenshots showing:
-
-- DAG graph structure
-- pure parallel mapped tasks
-- batched mapped tasks
-
-These are stored in:
-
-`docs/images/`
+```
+docs/archive/
+```
 
 ---
 
 ## Local Execution
 
-The pipeline is intended to run locally through Docker and Airflow.
-
-In general:
+The pipeline runs locally via Docker:
 
 1. configure environment variables
-2. start the Docker services
-3. open the Airflow UI
+2. start Docker services
+3. access Airflow UI
 4. trigger the DAG
-5. monitor execution in the Airflow interface
+5. monitor execution
 
-Detailed setup notes are documented in:
+Full setup:
 
-`docs/05_airflow_and_docker_setup.md`
+```
+docs/05_airflow_and_docker_setup.md
+```
 
 ---
 
 ## Design Principles
 
-The final implementation prioritizes:
-
-- maintainability over hardcoded table logic
-- shared standards with layer-specific flexibility
-- simple full refreshes over complex incremental logic
-- controlled execution over maximum theoretical speed
-- reproducibility through Dockerized orchestration
+* configuration over hardcoding
+* consistency with flexibility
+* simplicity over unnecessary complexity
+* reproducibility via containerization
+* controlled execution over maximum concurrency
 
 ---
 
 ## Outcome
 
-This project delivers a production-style ingestion foundation for Berlin POI data.
+This project delivers a **scalable, production-style ingestion pipeline** for geospatial POI data.
 
 It demonstrates:
 
-- geospatial data ingestion from OSM
-- schema design for multi-layer systems
-- dynamic orchestration with Airflow
-- Docker-based reproducibility
-- execution-strategy evaluation
-- practical engineering trade-off decisions
-
-It also serves as a strong example of how exploratory data work can be transformed into a scalable, automated data engineering pipeline.
+* Airflow-based orchestration
+* config-driven pipeline design
+* geospatial data processing
+* execution strategy evaluation
+* real-world engineering trade-offs
 
 ---
 
 ## Author
 
-Developed as part of a Data Engineering internship project focused on Berlin POI ingestion and location-intelligence infrastructure.
+Developed as part of a Data Engineering internship focused on geospatial data pipelines and location-intelligence systems.
+
+---
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License
