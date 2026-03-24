@@ -131,7 +131,7 @@ This transformed a manual workflow into a scalable ingestion system.
 ---
 
 ## Repository Structure
-
+```text
     berlin-poi-osm-pipeline/
 ├── README.md
 ├── .gitignore
@@ -174,7 +174,7 @@ This transformed a manual workflow into a scalable ingestion system.
 │
 └── notebooks/
     └── osm_layer_exploration_hotels.ipynb
-    
+``` 
    
 
 ---
