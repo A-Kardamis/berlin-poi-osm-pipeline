@@ -133,51 +133,49 @@ This transformed a manual workflow into a scalable ingestion system.
 ## Repository Structure
 
     berlin-poi-osm-pipeline/
-    ├── README.md
-    ├── .gitignore
-    │
-    ├── airflow/
-    │   ├── dags/
-    │   │   └── core_osm_table_generator_dag.py
-    │   ├── plugins/
-    │   ├── .env.example
-    │   ├── docker-compose.yml
-    │   ├── Dockerfile
-    │   └── requirements.txt
-    │
-    ├── config/
-    │   ├── core_columns.json
-    │   └── osm_tables.json
-    │
-    ├── data_reference/
-    │   ├── lor_ortsteile.geojson
-    │   └── wikidata_stars_candidates.csv
-    │
-    ├── docs/
-    │   ├── 01_project_overview.md
-    │   ├── 02_initial_layer_analysis.md
-    │   ├── 03_data_model_and_column_strategy.md
-    │   ├── 04_pipeline_architecture.md
-    │   ├── 05_airflow_and_docker_setup.md
-    │   ├── 06_execution_strategy_experiment.md
-    │   ├── 07_final_design_decisions.md
-    │   ├── images/
-    │   │   ├── airflow_dag_graph.png
-    │   │   ├── airflow_mapped_tasks_batch.png
-    │   │   └── airflow_mapped_tasks_parallel.png
-    │   └── archive/
-    │       ├── dag_experiment/
-    │       │   ├── core_osm_table_generator_dag_experiment.py
-    │       │   └── README.md
-    │       ├── experiment_results/
-    │       │   └── osm_experiment_results.csv
-    │       └── dag_experiment_vs_final.diff
-    │
-    └── notebooks/
-        ├── cache/
-        └── osm_layer_exploration_hotels.ipynb
+├── README.md
+├── .gitignore
+│
+├── airflow/
+│   ├── dags/
+│   │   └── core_osm_table_generator_dag.py
+│   ├── .env.example
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   └── requirements.txt
+│
+├── config/
+│   ├── core_columns.json
+│   ├── lor_ortsteile.geojson
+│   └── osm_tables.json
+│
+├── data_reference/
+│   └── wikidata_stars_candidates.csv
+│
+├── docs/
+│   ├── 01_project_overview.md
+│   ├── 02_initial_layer_analysis.md
+│   ├── 03_data_model_and_column_strategy.md
+│   ├── 04_pipeline_architecture.md
+│   ├── 05_airflow_and_docker_setup.md
+│   ├── 06_execution_strategy_experiment.md
+│   ├── 07_final_design_decisions.md
+│   ├── images/
+│   │   ├── airflow_dag_graph.png
+│   │   ├── airflow_mapped_tasks_batch.png
+│   │   └── airflow_mapped_tasks_parallel.png
+│   └── archive/
+│       ├── dag_experiment/
+│       │   ├── core_osm_table_generator_dag_experiment.py
+│       │   └── README.md
+│       ├── experiment_results/
+│       │   └── osm_experiment_results.csv
+│       └── dag_experiment_vs_final.diff
+│
+└── notebooks/
+    └── osm_layer_exploration_hotels.ipynb
     
-    
+   
 
 ---
 
@@ -331,3 +329,7 @@ It also serves as a strong example of how exploratory data work can be transform
 ## Author
 
 Developed as part of a Data Engineering internship project focused on Berlin POI ingestion and location-intelligence infrastructure.
+
+## License
+
+This project is licensed under the MIT License.
